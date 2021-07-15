@@ -34,6 +34,8 @@ import Foundation
 /// ```
 public final class Scope {
   let storage: Storage = Storage()
+  
+  public init() {}
 }
 
 public extension Scope {
