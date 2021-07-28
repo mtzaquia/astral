@@ -27,43 +27,43 @@ import XCTest
 import OSLog
 
 class SampleDependency {
-  init() {
-    Logger.astral.info("\(String(describing: self)) has been initiated.")
-  }
-
-  func use() {
-    Logger.astral.info("\(String(describing: self)) has been used.")
-  }
+	init() {
+		Logger.astral.info("\(String(describing: self)) has been initiated.")
+	}
+	
+	func use() {
+		Logger.astral.info("\(String(describing: self)) has been used.")
+	}
 }
 
 extension Scope {
-  static let test = Scope()
+	static let test = Scope()
 }
 
 @available(iOS 15, *)
 final class AstralTests: XCTestCase {
-  override func tearDown() {
-    Scope.test.clear()
-  }
-
-  func testNamedInjection() async throws {
-    Scope.test.register(named: "sample", SampleDependency())
-
-    let model = ModelNameFetching()
-    XCTAssertNotNil(model.namedDependency)
-  }
-
-  func testInferredInjection() async throws {
-    Scope.test.register(SampleDependency())
-
-    let model = ModelInferredFetching()
-    XCTAssertNotNil(model.inferredDependency)
-  }
-
-  func testLazyInjection() async throws {
-    Scope.test.register(lazy: true, SampleDependency())
-
-    let model = ModelInferredFetching()
-    XCTAssertNotNil(model.inferredDependency)
-  }
+	override func tearDown() {
+		Scope.test.clear()
+	}
+	
+	func testNamedInjection() {
+		Scope.test.register(named: "sample", SampleDependency())
+		
+		let model = ModelNameFetching()
+		XCTAssertNotNil(model.namedDependency)
+	}
+	
+	func testInferredInjection() {
+		Scope.test.register(SampleDependency())
+		
+		let model = ModelInferredFetching()
+		XCTAssertNotNil(model.inferredDependency)
+	}
+	
+	func testLazyInjection() {
+		Scope.test.register(lazy: true, SampleDependency())
+		
+		let model = ModelInferredFetching()
+		XCTAssertNotNil(model.inferredDependency)
+	}
 }

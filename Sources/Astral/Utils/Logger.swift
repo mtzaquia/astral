@@ -25,6 +25,6 @@
 import OSLog
 
 extension Logger {
-  static let astral = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "Astral")
+	static let astral = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "Astral")
 }
 

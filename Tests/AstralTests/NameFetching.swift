@@ -27,14 +27,14 @@ import Foundation
 import OSLog
 
 extension Storage {
-  var namedDependency: SampleDependency { resolve(named: "sample") }
+	var namedDependency: SampleDependency { resolve(named: "sample") }
 }
 
 class ModelNameFetching {
-  @Dependency(\.namedDependency, scope: .test) var namedDependency
-
-  init() {
-    Logger.astral.info("\(String(describing: self)) has been initiated.")
-    namedDependency.use()
-  }
+	@Dependency(\.namedDependency, scope: .test) var namedDependency
+	
+	init() {
+		Logger.astral.info("\(String(describing: self)) has been initiated.")
+		namedDependency.use()
+	}
 }

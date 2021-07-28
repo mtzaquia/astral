@@ -33,27 +33,27 @@ import Foundation
 /// }
 /// ```
 public final class Scope {
-  let storage: Storage = Storage()
-  
-  public init() {}
+	let storage: Storage = Storage()
+	
+	public init() {}
 }
 
 public extension Scope {
-  /// A global scope for storage of generic dependencies.
-  static let global = Scope()
-
-  /// This method will store a dependency for later use. Dependencies registered this way can be later accessed with ``Dependencies/resolve(named:)``.
-  ///
-  /// - Parameters:
-  ///   - named: The name to be used when registering this dependency. By default, this will be the description of the instance type.
-  ///   - lazy: A flag indicating whether the instance should be lazily instantiated. Defaults to `false`.
-  ///   - instance: The instance to be registered for the given name.
-  func register<Dependency>(named: String? = nil, lazy: Bool = false, _ instance: @autoclosure @escaping () -> Dependency) {
-    storage.register(named: named, lazy: lazy, instance)
-  }
-
-  /// Removes all the stored dependencies from this particular scope.
-  func clear() {
-    storage.clear()
-  }
+	/// A global scope for storage of generic dependencies.
+	static let global = Scope()
+	
+	/// This method will store a dependency for later use. Dependencies registered this way can be later accessed with ``Dependencies/resolve(named:)``.
+	///
+	/// - Parameters:
+	///   - named: The name to be used when registering this dependency. By default, this will be the description of the instance type.
+	///   - lazy: A flag indicating whether the instance should be lazily instantiated. Defaults to `false`.
+	///   - instance: The instance to be registered for the given name.
+	func register<Dependency>(named: String? = nil, lazy: Bool = false, _ instance: @autoclosure @escaping () -> Dependency) {
+		storage.register(named: named, lazy: lazy, instance)
+	}
+	
+	/// Removes all the stored dependencies from this particular scope.
+	func clear() {
+		storage.clear()
+	}
 }

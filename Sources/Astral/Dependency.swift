@@ -27,19 +27,19 @@ import Foundation
 /// A property wrapper that fetches previously registered dependencies from a given ``Scope``.
 @propertyWrapper
 public struct Dependency<T> {
-  public lazy var wrappedValue: T = {
-    scope.storage[keyPath: keyPath]
-  }()
-
-  private var keyPath: KeyPath<Storage, T>
-  private var scope: Scope
-
-  /// Use this wrapper to fetch a previously registered dependencies from a given ``Scope``.
-  /// - Parameters:
-  ///   - keyPath: The ``Storage`` key path in which the dependency is stored.
-  ///   - scope: The ``Scope`` in which the dependency is stored. Defaults to ``Scope/global``.
-  public init(_ keyPath: KeyPath<Storage, T>, scope: Scope = .global) {
-    self.keyPath = keyPath
-    self.scope = scope
-  }
+	public lazy var wrappedValue: T = {
+		scope.storage[keyPath: keyPath]
+	}()
+	
+	private var keyPath: KeyPath<Storage, T>
+	private var scope: Scope
+	
+	/// Use this wrapper to fetch a previously registered dependencies from a given ``Scope``.
+	/// - Parameters:
+	///   - keyPath: The ``Storage`` key path in which the dependency is stored.
+	///   - scope: The ``Scope`` in which the dependency is stored. Defaults to ``Scope/global``.
+	public init(_ keyPath: KeyPath<Storage, T>, scope: Scope = .global) {
+		self.keyPath = keyPath
+		self.scope = scope
+	}
 }

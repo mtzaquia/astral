@@ -27,14 +27,14 @@ import Foundation
 import OSLog
 
 extension Storage {
-  var inferredDependency: SampleDependency { resolve() }
+	var inferredDependency: SampleDependency { resolve() }
 }
 
 class ModelInferredFetching {
-  @Dependency(\.inferredDependency, scope: .test) var inferredDependency
-
-  init() {
-    Logger.astral.info("\(String(describing: self)) has been initiated.")
-    inferredDependency.use()
-  }
+	@Dependency(\.inferredDependency, scope: .test) var inferredDependency
+	
+	init() {
+		Logger.astral.info("\(String(describing: self)) has been initiated.")
+		inferredDependency.use()
+	}
 }
