@@ -1,4 +1,4 @@
-# Astral
+# 🌌 Astral
 
 Astral is a lightweight, scalable framework for strongly-typed dependency injection with property wrapper support.
 
@@ -10,7 +10,7 @@ Astral is available via Swift Package Manager.
 
 ```swift
 dependencies: [
-  .package(url: "https://github.com/mtzaquia/astral.git", branch: "main"),
+  .package(url: "https://github.com/mtzaquia/astral.git", branch: "1.0.0"),
 ],
 ```
 
