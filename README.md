@@ -1,79 +1,108 @@
 # 🌌 Astral
 
-Astral is a lightweight, scalable framework for strongly-typed dependency injection with property wrapper support.
+[![Tests](https://github.com/mtzaquia/astral/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/mtzaquia/astral/actions/workflows/tests.yml)
+[![Swift 6.3](https://img.shields.io/badge/Swift-6.3-orange.svg)](https://www.swift.org/)
+[![iOS 17+](https://img.shields.io/badge/iOS-17%2B-blue.svg)](https://github.com/mtzaquia/astral/blob/main/Package.swift)
+[![macOS 14+](https://img.shields.io/badge/macOS-14%2B-blue.svg)](https://github.com/mtzaquia/astral/blob/main/Package.swift)
+![Class C](https://img.shields.io/badge/class-C-orange)
 
-Astral is mostly inspired by `SwiftUI.Environment`.
+Astral is a Swift dependency-injection library built around typed keys and property wrappers.
 
-## Instalation
+Define the value associated with a key, set that key in a scope, and inject it where it is needed. Astral uses the key type as identity, so multiple dependencies can share a value type without relying on strings.
 
-Astral is available via Swift Package Manager.
+- Starts with an implicit global scope and adds custom scopes when isolation is needed.
+- Supports eager values and concurrency-safe deferred factories.
+- Requires `Sendable` dependencies and factories without imposing main-actor isolation.
+- Reports missing registrations and circular factories through typed errors.
+- Captures an immutable dependency snapshot when `@Dependency` initializes.
+- Provides opt-in lifecycle diagnostics in debug builds.
+
+```swift
+import Astral
+
+protocol ProfileService: Sendable {
+  func loadProfile()
+}
+
+struct LiveProfileService: ProfileService {
+  func loadProfile() {}
+}
+
+enum ProfileServiceKey: DependencyKey {
+  typealias Value = any ProfileService
+}
+
+Scope.global.set(
+  LiveProfileService(),
+  for: ProfileServiceKey.self
+)
+
+final class ProfileModel {
+  @Dependency(ProfileServiceKey.self) var profileService
+
+  func refresh() {
+    profileService.loadProfile()
+  }
+}
+```
+
+## Install
+
+Astral 2.0 supports iOS 17 and macOS 14 or later and uses Swift tools version 6.3. Add it to your Swift Package Manager dependencies:
 
 ```swift
 dependencies: [
-  .package(url: "https://github.com/mtzaquia/astral.git", branch: "1.0.0"),
-],
+  .package(url: "https://github.com/mtzaquia/astral.git", from: "2.0.0"),
+]
 ```
 
-## Usage
+Then add the `Astral` product to each target that imports it.
 
-### Create your scope (optional)
+## Five-minute start
 
-For simpler projects, you should be good to go with the `Scope.global`. For larger and/or modularised projects, prefer creating your scope by declaring it in an extension.
-
-```swift
-extension Scope {
-  static let myScope = Scope()
-}
-``` 
-
-### Register instances
-
-Before using your dependencies, make sure an instance is available or can be lazily resolved.
+Define one key for each dependency. The key's associated `Value` is the type callers receive:
 
 ```swift
-// No name needed, the type will be used as key automatically.
-Scope.myScope.register(SampleDependency())
+import Astral
 
-// A dependency that will be initialised on the first access.
-Scope.myScope.register(lazy: true, MyDependency())
-
-// A dependency registered with a custom name, which also needs to be used when fetching it with `resolve(named:)`.
-Scope.myScope.register(named: "CustomName", lazy: true, MyDependency())
-``` 
-
-### Extend the storage
-
-For strongly-typed access, declare your properties in a `Storage` extension. If you are not using a custom name when registering this dependency, all you need to do is call `resolve()` as your getter - type inference will do the rest. 
-
-```swift
-// Your declaration will use its type to automatically resolve the instance.
-extension Storage { 
-  var myDependency: SampleDependency { resolve() }
+protocol APIClient: Sendable {
+  func fetchProfile()
 }
 
-// If you registered your dependency with a custom name, make sure to pass it to `.resolve(named:)`. 
-extension Storage {
-  var myDependency: MyDependency { resolve(named: "CustomName") }
+struct LiveAPIClient: APIClient {
+  func fetchProfile() {}
+}
+
+enum APIClientKey: DependencyKey {
+  typealias Value = any APIClient
 }
 ```
 
-### Fetching the instance
-
-Finally, simply declare a property with the `@Dependency` property wrapper, providing the key path you have declared on `Storage`.
-
-If you ommit the `scope:` parameter, the lookup will happen on `Scope.global`.   
+Set the dependency during application startup:
 
 ```swift
-struct MyModel {
-  // ...
-  @Dependency(\.myDependency, scope: .myScope) var myDependency
-  func method() {
-    myDependency.doSomething()
+Scope.global.set(LiveAPIClient(), for: APIClientKey.self)
+```
+
+Then inject it. Omitting `scope:` uses `Scope.global`:
+
+```swift
+final class AccountModel {
+  @Dependency(APIClientKey.self) var apiClient
+
+  func reload() {
+    apiClient.fetchProfile()
   }
-  
-  // ...
 }
-``` 
+```
+
+That is the core idea: a `DependencyKey` provides compile-time identity and value typing, while a `Scope` owns the current registration.
+
+## Documentation
+
+- [Working with keys and scopes](docs/scopes-and-dependencies.md) — set values and factories, recover from failures, isolate features, and remove registrations.
+- [Inspect dependency activity](docs/diagnostics.md) — enable unified logs for typed-key registration and resolution.
+- [Migrate to Astral 2.0](docs/migrating-to-2.0.md) — replace `Storage`, named registrations, lazy flags, and `clear()`.
 
 ## License
 

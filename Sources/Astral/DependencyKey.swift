@@ -1,7 +1,7 @@
 //
-//  NameFetching.swift
+//  DependencyKey.swift
 //
-//  Copyright (c) 2021 @mtzaquia
+//  Copyright (c) 2026 @mtzaquia
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -22,19 +22,29 @@
 //  SOFTWARE.
 //
 
-import Foundation
-@testable import Astral
-import OSLog
+/// A type-level key that identifies one dependency in a ``Scope``.
+///
+/// Define an uninhabited type for each dependency:
+///
+/// ```swift
+/// enum APIClientKey: DependencyKey {
+///   typealias Value = any APIClient
+/// }
+/// ```
+///
+/// The key type itself provides identity. ``debugName`` is used only in
+/// caller-facing errors and does not participate in lookup.
+public protocol DependencyKey: Sendable {
+	/// The value registered for this key.
+	associatedtype Value: Sendable
 
-extension Storage {
-	var namedDependency: SampleDependency { resolve(named: "sample") }
+	/// A caller-readable name used in resolution errors.
+	static var debugName: String { get }
 }
 
-class ModelNameFetching {
-	@Dependency(\.namedDependency, scope: .test) var namedDependency
-	
-	init() {
-		Logger.astral.info("\(String(describing: self)) has been initiated.")
-		namedDependency.use()
+public extension DependencyKey {
+	/// The fully qualified key type name.
+	static var debugName: String {
+		String(reflecting: Self.self)
 	}
 }

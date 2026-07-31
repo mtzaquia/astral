@@ -22,38 +22,112 @@
 //  SOFTWARE.
 //
 
-import Foundation
-
-/// A type that defines a contained scope of dependencies.
+/// An independent collection of dependency registrations.
 ///
-/// It is recommended that you extended this type with your own declarations, so that your dependencies are properly segregated.
+/// ``Scope/global`` provides the default registration set. Define additional
+/// scopes when a feature, preview, or test needs isolated dependencies.
+///
 /// ```swift
 /// extension Scope {
-///   static let myScope = Scope()
+///   static let profile = Scope()
 /// }
 /// ```
-public final class Scope {
-	let storage: Storage = Storage()
+public final class Scope: Sendable {
+	private let storage = Storage()
 	
+	/// Creates an empty dependency scope.
 	public init() {}
 }
 
 public extension Scope {
-	/// A global scope for storage of generic dependencies.
+	/// The process-wide scope used by ``Dependency`` when no scope is supplied.
 	static let global = Scope()
-	
-	/// This method will store a dependency for later use. Dependencies registered this way can be later accessed with ``Dependencies/resolve(named:)``.
+
+	/// Sets an immediately available value for a typed dependency key.
+	///
+	/// Setting the same key again replaces its previous value or factory before
+	/// this method returns. Existing ``Dependency`` wrappers retain the value they
+	/// captured earlier.
 	///
 	/// - Parameters:
-	///   - named: The name to be used when registering this dependency. By default, this will be the description of the instance type.
-	///   - lazy: A flag indicating whether the instance should be lazily instantiated. Defaults to `false`.
-	///   - instance: The instance to be registered for the given name.
-	func register<Dependency>(named: String? = nil, lazy: Bool = false, _ instance: @autoclosure @escaping () -> Dependency) {
-		storage.register(named: named, lazy: lazy, instance)
+	///   - value: The value to store.
+	///   - key: The key that identifies the value.
+	func set<Key: DependencyKey>(_ value: Key.Value, for key: Key.Type) {
+		storage.set(value, for: key)
 	}
-	
-	/// Removes all the stored dependencies from this particular scope.
-	func clear() {
-		storage.clear()
+
+	/// Sets a factory that creates a typed dependency when first resolved.
+	///
+	/// Concurrent callers share one in-flight invocation. The factory executes
+	/// outside the scope's synchronization lock, and its successful result is
+	/// cached while this registration remains current. A thrown error is not
+	/// cached, so a later resolution retries the factory.
+	///
+	/// - Parameters:
+	///   - key: The key that identifies the value.
+	///   - factory: A concurrency-safe factory that produces the value.
+	func set<Key: DependencyKey>(
+		for key: Key.Type,
+		factory: @escaping @Sendable () throws -> Key.Value
+	) {
+		storage.set(for: key, factory: factory)
+	}
+
+	/// Resolves a typed dependency from this scope.
+	///
+	/// - Parameter key: The key to resolve.
+	/// - Returns: The registered value or the cached result of its factory.
+	/// - Throws: ``DependencyResolutionError/notRegistered(_:)`` when the key is
+	///   absent, ``DependencyResolutionError/circularDependency(_:)`` when lazy
+	///   factories form a cycle, or an error thrown by the registered factory.
+	func resolve<Key: DependencyKey>(_ key: Key.Type) throws -> Key.Value {
+		try storage.resolve(key)
+	}
+
+	/// Resolves a typed dependency or terminates the process on failure.
+	///
+	/// Use this method when missing configuration is a programming error. Use
+	/// ``resolve(_:)`` when the caller can recover.
+	///
+	/// - Parameters:
+	///   - key: The key to resolve.
+	///   - file: The source file reported when resolution fails.
+	///   - line: The source line reported when resolution fails.
+	/// - Returns: The registered value or the cached result of its factory.
+	func require<Key: DependencyKey>(
+		_ key: Key.Type,
+		file: StaticString = #fileID,
+		line: UInt = #line
+	) -> Key.Value {
+		do {
+			return try resolve(key)
+		} catch {
+			fatalError(
+				"Unable to resolve '\(Key.debugName)': \(error)",
+				file: file,
+				line: line
+			)
+		}
+	}
+
+	/// Removes one typed dependency registration.
+	///
+	/// Removing an in-flight factory prevents its result from being cached, but
+	/// does not cancel the invocation already serving a caller.
+	///
+	/// - Parameter key: The key to remove.
+	/// - Returns: `true` when a value, factory, or in-flight invocation existed.
+	@discardableResult
+	func remove<Key: DependencyKey>(_ key: Key.Type) -> Bool {
+		storage.remove(key)
+	}
+
+	/// Removes every dependency registration from this scope.
+	///
+	/// In-flight factories are not cancelled, and their results are not cached
+	/// after this method returns. Existing ``Dependency`` wrappers retain their
+	/// captured values.
+	func removeAll() {
+		storage.removeAll()
 	}
 }

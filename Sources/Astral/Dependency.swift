@@ -22,24 +22,32 @@
 //  SOFTWARE.
 //
 
-import Foundation
-
-/// A property wrapper that fetches previously registered dependencies from a given ``Scope``.
+/// A property wrapper that requires a typed dependency from a ``Scope``.
+///
+/// The wrapper resolves during initialization and retains that value for its
+/// lifetime. Clearing or replacing the registration does not change an existing
+/// wrapper.
 @propertyWrapper
-public struct Dependency<T> {
-	public lazy var wrappedValue: T = {
-		scope.storage[keyPath: keyPath]
-	}()
-	
-	private var keyPath: KeyPath<Storage, T>
-	private var scope: Scope
-	
-	/// Use this wrapper to fetch a previously registered dependencies from a given ``Scope``.
+public struct Dependency<Key: DependencyKey>: Sendable {
+	/// The dependency captured when the wrapper was initialized.
+	public let wrappedValue: Key.Value
+
+	/// Creates a wrapper that requires a dependency from a scope.
+	///
+	/// This initializer terminates the process when resolution fails. Use
+	/// ``Scope/resolve(_:)`` when the caller can recover from failure.
+	///
 	/// - Parameters:
-	///   - keyPath: The ``Storage`` key path in which the dependency is stored.
-	///   - scope: The ``Scope`` in which the dependency is stored. Defaults to ``Scope/global``.
-	public init(_ keyPath: KeyPath<Storage, T>, scope: Scope = .global) {
-		self.keyPath = keyPath
-		self.scope = scope
+	///   - key: The typed key to resolve.
+	///   - scope: The scope to query. Defaults to ``Scope/global``.
+	///   - file: The source file reported when resolution fails.
+	///   - line: The source line reported when resolution fails.
+	public init(
+		_ key: Key.Type,
+		scope: Scope = .global,
+		file: StaticString = #fileID,
+		line: UInt = #line
+	) {
+		wrappedValue = scope.require(key, file: file, line: line)
 	}
 }

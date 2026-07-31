@@ -1,7 +1,7 @@
 //
-//  Logger.swift
+//  DependencyResolutionError.swift
 //
-//  Copyright (c) 2021 @mtzaquia
+//  Copyright (c) 2026 @mtzaquia
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -22,9 +22,23 @@
 //  SOFTWARE.
 //
 
-import OSLog
+/// An error produced while resolving a dependency from a ``Scope``.
+public enum DependencyResolutionError: Error, Equatable, Sendable {
+	/// No value or factory is registered for the requested key.
+	case notRegistered(String)
 
-extension Logger {
-	static let astral = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "Astral")
+	/// Lazy factories formed a cycle while resolving the listed key path.
+	case circularDependency([String])
 }
 
+extension DependencyResolutionError: CustomStringConvertible {
+	/// A caller-readable explanation of the resolution failure.
+	public var description: String {
+		switch self {
+		case let .notRegistered(key):
+			"No dependency is registered for '\(key)'."
+		case let .circularDependency(path):
+			"Circular dependency detected: \(path.joined(separator: " → "))."
+		}
+	}
+}
